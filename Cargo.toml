@@ -1,0 +1,9 @@
+[package]
+name = "seccomp"
+version = "0.1.0"
+authors = ["anoospyos"]
+
+[dependencies]
+libc = "0.2"
+[dependencies.seccomp-sys]
+seccomp-sys = "https://github.com/polachok/seccomp-sys"
