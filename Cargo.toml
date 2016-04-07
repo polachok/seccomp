@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Alexander Polakov <apolyakov@beget.ru>"]
 license = "LGPL-2.1"
 keywords = ["linux", "seccomp"]
-description = "low-level bindings to libseccomp"
+description = "higher-level bindings to libseccomp"
 repository = "https://github.com/polachok/seccomp"
 readme = "README.md"
 
