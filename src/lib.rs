@@ -99,16 +99,41 @@ impl Into<libc::uint32_t> for Action {
 	}
 }
 
+/// A macro to ergonomically express comparisons using ordinary
+/// comparison operators.
+///
+/// # Example
+///
+/// ```
+/// #[macro_use]
+/// extern crate seccomp;
+/// use seccomp::*;
+/// fn main() {
+///	  let mut ctx = seccomp::Context::default(Action::Allow).unwrap();
+///	  let rule = seccomp::Rule::new2(Syscall::Setuid, scmp_cmp!( Arg(0) == 1000 ),
+///                             	   seccomp::Action::Errno(5) /* return an error */
+///	  );
+/// }
+/// ```
 #[macro_export]
 macro_rules! scmp_cmp {
+    (Arg($arg:expr) != $value:expr) => {{
+        Cmp { arg: $arg, op: $crate::Op::Ne.into(), datum_a: $value, datum_b: 0 }
+    }};
     (Arg($arg:expr) < $value:expr) => {{
-        Cmp { arg: $arg, op: SCMP_CMP_LT, datum_a: $value, datum_b: 0 }
+        Cmp { arg: $arg, op: $crate::Op::Lt.into(), datum_a: $value, datum_b: 0 }
     }};
     (Arg($arg:expr) <= $value:expr) => {{
-        Cmp { arg: $arg, op: SCMP_CMP_LE, datum_a: $value, datum_b: 0 }
+        Cmp { arg: $arg, op: $crate::Op::Le.into(), datum_a: $value, datum_b: 0 }
     }};
     (Arg($arg:expr) == $value:expr) => {{
-        Cmp { arg: $arg, op: SCMP_CMP_EQ, datum_a: $value, datum_b: 0 }
+        Cmp { arg: $arg, op: $crate::Op::Eq.into(), datum_a: $value, datum_b: 0 }
+    }};
+    (Arg($arg:expr) >= $value:expr) => {{
+        Cmp { arg: $arg, op: $crate::Op::Ge.into(), datum_a: $value, datum_b: 0 }
+    }};
+    (Arg($arg:expr) > $value:expr) => {{
+        Cmp { arg: $arg, op: $crate::Op::Gt.into(), datum_a: $value, datum_b: 0 }
     }};
 }
 
