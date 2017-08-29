@@ -24,7 +24,7 @@
 //!		let ret = unsafe { libc::setuid(1000) };
 //!		println!("ret = {}, uid = {}", ret, unsafe { libc::getuid() });
 //!}
-//!# pook perd
+//!
 //!
 
 
@@ -97,6 +97,19 @@ impl Into<libc::uint32_t> for Action {
 			Action::Trace(x) => SCMP_ACT_TRACE(x),
 		}
 	}
+}
+
+#[macro_export]
+macro_rules! scmp_cmp {
+    (Arg($arg:expr) < $value:expr) => {{
+        Cmp { arg: $arg, op: SCMP_CMP_LT, datum_a: $value, datum_b: 0 }
+    }};
+    (Arg($arg:expr) <= $value:expr) => {{
+        Cmp { arg: $arg, op: SCMP_CMP_LE, datum_a: $value, datum_b: 0 }
+    }};
+    (Arg($arg:expr) == $value:expr) => {{
+        Cmp { arg: $arg, op: SCMP_CMP_EQ, datum_a: $value, datum_b: 0 }
+    }};
 }
 
 /// Comparison definition builder
@@ -246,13 +259,25 @@ impl Drop for Context {
 
 #[test]
 fn it_works() {
-	fn test() -> Result<(),Box<Error>> {
-		let mut ctx = try!(Context::default(Action::Allow));
-		try!(ctx.add_rule(Rule::new(105, Compare::arg(0).using(Op::Eq).with(1000).build().unwrap(), Action::Errno(libc::EPERM))));
-		try!(ctx.load());
-		let ret = unsafe { libc::setuid(1000) };
-		println!("ret = {}, uid = {}", ret, unsafe { libc::getuid() });
-		Ok(())
-	}
-	test().unwrap();
+	  fn test() -> Result<(),Box<Error>> {
+		    let mut ctx = try!(Context::default(Action::Allow));
+		    try!(ctx.add_rule(Rule::new(105, Compare::arg(0).using(Op::Eq).with(1000).build().unwrap(), Action::Errno(libc::EPERM))));
+		    try!(ctx.load());
+		    let ret = unsafe { libc::setuid(1000) };
+        assert_eq!(ret, libc::EPERM);
+		    Ok(())
+	  }
+	  test().unwrap();
+}
+
+#[test]
+fn macro_works() {
+	  fn test() -> Result<(),Box<Error>> {
+		    let mut ctx = try!(Context::default(Action::Allow));
+		    try!(ctx.add_rule(Rule::new(105, scmp_cmp!(Arg(0) == 1000),
+                                    Action::Errno(libc::EPERM))));
+		    try!(ctx.load());
+		    Ok(())
+	  }
+	  test().unwrap();
 }
