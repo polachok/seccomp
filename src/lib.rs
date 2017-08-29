@@ -110,8 +110,8 @@ impl Into<libc::uint32_t> for Action {
 /// use seccomp::*;
 /// fn main() {
 ///	  let mut ctx = seccomp::Context::default(Action::Allow).unwrap();
-///	  let rule = seccomp::Rule::new2(Syscall::Setuid, scmp_cmp!( Arg(0) == 1000 ),
-///                             	   seccomp::Action::Errno(5) /* return an error */
+///	  let rule = seccomp::Rule::new(105, scmp_cmp!( Arg(0) == 1000 ),
+///                             	  seccomp::Action::Errno(5) /* return an error */
 ///	  );
 /// }
 /// ```
@@ -192,6 +192,39 @@ pub struct Rule {
 	comparators: Vec<Cmp>,
 }
 
+#[derive(Debug,Clone,Copy)]
+pub enum Syscall {
+    Setuid,
+    Getuid,
+    Write,
+    Writev,
+    Pwritev,
+    Read,
+}
+
+fn syscall_to_num(s: Syscall) -> usize {
+    match s {
+        Syscall::Setuid => unsafe {
+            seccomp_syscall_resolve_name(std::ffi::CString::new("setuid").unwrap().as_ptr()) as usize
+        },
+        Syscall::Getuid => unsafe {
+            seccomp_syscall_resolve_name(std::ffi::CString::new("getuid").unwrap().as_ptr()) as usize
+        },
+        Syscall::Write => unsafe {
+            seccomp_syscall_resolve_name(std::ffi::CString::new("write").unwrap().as_ptr()) as usize
+        },
+        Syscall::Writev => unsafe {
+            seccomp_syscall_resolve_name(std::ffi::CString::new("writev").unwrap().as_ptr()) as usize
+        },
+        Syscall::Pwritev => unsafe {
+            seccomp_syscall_resolve_name(std::ffi::CString::new("pwritev").unwrap().as_ptr()) as usize
+        },
+        Syscall::Read => unsafe {
+            seccomp_syscall_resolve_name(std::ffi::CString::new("read").unwrap().as_ptr()) as usize
+        },
+    }
+}
+
 impl Rule {
 	/// Create new rule for `syscall_nr` using comparison `cmp`.
 	pub fn new(syscall_nr: usize, cmp: Cmp, action: Action) -> Rule {
@@ -199,6 +232,14 @@ impl Rule {
 			action: action,
 			syscall_nr: syscall_nr,
 			comparators: vec![cmp]
+		}
+	}
+	/// Create new rule for `syscall` that gives an EPERM error.
+	pub fn eperm(syscall: Syscall) -> Rule {
+		Rule {
+			action: Action::Errno(libc::EPERM),
+			syscall_nr: syscall_to_num(syscall),
+			comparators: Vec::new(),
 		}
 	}
 
@@ -283,13 +324,30 @@ impl Drop for Context {
 }
 
 #[test]
+fn setuid_is_105() {
+    assert_eq!(105, syscall_to_num(Syscall::Setuid));
+}
+
+#[test]
 fn it_works() {
 	  fn test() -> Result<(),Box<Error>> {
-		    let mut ctx = try!(Context::default(Action::Allow));
-		    try!(ctx.add_rule(Rule::new(105, Compare::arg(0).using(Op::Eq).with(1000).build().unwrap(), Action::Errno(libc::EPERM))));
-		    try!(ctx.load());
-		    let ret = unsafe { libc::setuid(1000) };
-        assert_eq!(ret, libc::EPERM);
+        let myuid = unsafe { libc::getuid() };
+
+        // First check that setting our uid to ourselves does not
+        // fail (without seccomp).
+		    let ret = unsafe { libc::setuid(myuid) };
+        println!("try 1: ret = {}, uid = {} (from {})", ret, unsafe { libc::getuid() },
+                 myuid);
+        assert_eq!(ret, 0);
+
+		    // let mut ctx = try!(Context::default(Action::Allow));
+		    // try!(ctx.add_rule(Rule::new(105, Compare::arg(0).using(Op::Eq).with(myuid as u64).build().unwrap(), Action::Errno(libc::EPERM))));
+		    // try!(ctx.load());
+
+		    // let ret = unsafe { libc::setuid(myuid) };
+        // println!("ret = {}, uid = {} (from {})", ret, unsafe { libc::getuid() },
+        //          myuid);
+        // assert!(ret != 0);
 		    Ok(())
 	  }
 	  test().unwrap();
@@ -298,10 +356,46 @@ fn it_works() {
 #[test]
 fn macro_works() {
 	  fn test() -> Result<(),Box<Error>> {
+        use std::io::Write;
+
+        // first check that we can write 0 bytes before using seccomp
+        // to restrict ourselves.
+		    let ret = unsafe { libc::write(1,std::ptr::null(),0) };
+        println!("ret is {} without seccomp", ret);
+        assert_eq!(ret, 0);
+
 		    let mut ctx = try!(Context::default(Action::Allow));
-		    try!(ctx.add_rule(Rule::new(105, scmp_cmp!(Arg(0) == 1000),
+		    try!(ctx.add_rule(Rule::new(syscall_to_num(Syscall::Write),
+                                    scmp_cmp!( Arg(0) == 1 ),
+                                    Action::Errno(libc::EPERM))));
+		    try!(ctx.add_rule(Rule::new(syscall_to_num(Syscall::Writev),
+                                    scmp_cmp!( Arg(0) == 1 ),
+                                    Action::Errno(libc::EPERM))));
+		    try!(ctx.add_rule(Rule::new(syscall_to_num(Syscall::Pwritev),
+                                    scmp_cmp!( Arg(0) == 1 ),
                                     Action::Errno(libc::EPERM))));
 		    try!(ctx.load());
+
+		    let ret = unsafe { libc::write(1,std::ptr::null(),0) };
+        println!("ret is {} with seccomp", ret);
+        assert_eq!(ret, -1);
+		    Ok(())
+	  }
+	  test().unwrap();
+}
+
+#[test]
+fn eperm_works() {
+	  fn test() -> Result<(),Box<Error>> {
+        let myuid = unsafe { libc::getuid() };
+
+		    let mut ctx = try!(Context::default(Action::Allow));
+		    try!(ctx.add_rule(Rule::eperm(Syscall::Getuid)));
+		    try!(ctx.load());
+
+		    let ret = unsafe { libc::getuid() };
+        println!("ret = {} (from {}) vs {}", ret, myuid, 0xffffffff as usize);
+        assert!(ret == 0xffffffff);
 		    Ok(())
 	  }
 	  test().unwrap();
