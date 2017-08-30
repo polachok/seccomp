@@ -196,32 +196,44 @@ pub struct Rule {
 pub enum Syscall {
     Setuid,
     Getuid,
-    Write,
     Writev,
     Pwritev,
+    Exit,
+    Fork,
     Read,
+    Write,
+    Open,
+    Close,
+    Waitpid,
+    Creat,
+    Link,
+    Unlink,
+    Execve,
+}
+
+fn str_sysnum(x: &str) -> usize {
+    unsafe {
+        seccomp_syscall_resolve_name(std::ffi::CString::new(x).unwrap().as_ptr()) as usize
+    }
 }
 
 fn syscall_to_num(s: Syscall) -> usize {
     match s {
-        Syscall::Setuid => unsafe {
-            seccomp_syscall_resolve_name(std::ffi::CString::new("setuid").unwrap().as_ptr()) as usize
-        },
-        Syscall::Getuid => unsafe {
-            seccomp_syscall_resolve_name(std::ffi::CString::new("getuid").unwrap().as_ptr()) as usize
-        },
-        Syscall::Write => unsafe {
-            seccomp_syscall_resolve_name(std::ffi::CString::new("write").unwrap().as_ptr()) as usize
-        },
-        Syscall::Writev => unsafe {
-            seccomp_syscall_resolve_name(std::ffi::CString::new("writev").unwrap().as_ptr()) as usize
-        },
-        Syscall::Pwritev => unsafe {
-            seccomp_syscall_resolve_name(std::ffi::CString::new("pwritev").unwrap().as_ptr()) as usize
-        },
-        Syscall::Read => unsafe {
-            seccomp_syscall_resolve_name(std::ffi::CString::new("read").unwrap().as_ptr()) as usize
-        },
+        Syscall::Setuid => str_sysnum("setuid"),
+        Syscall::Getuid => str_sysnum("getuid"),
+        Syscall::Write => str_sysnum("write"),
+        Syscall::Writev => str_sysnum("writev"),
+        Syscall::Pwritev => str_sysnum("pwritev"),
+        Syscall::Read => str_sysnum("read"),
+        Syscall::Exit => str_sysnum("exit"),
+        Syscall::Fork => str_sysnum("fork"),
+        Syscall::Open => str_sysnum("open"),
+        Syscall::Close => str_sysnum("close"),
+        Syscall::Waitpid => str_sysnum("waitpid"),
+        Syscall::Creat => str_sysnum("creat"),
+        Syscall::Link => str_sysnum("link"),
+        Syscall::Unlink => str_sysnum("unlink"),
+        Syscall::Execve => str_sysnum("execve"),
     }
 }
 
