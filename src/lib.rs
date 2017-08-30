@@ -242,6 +242,14 @@ impl Rule {
 			comparators: Vec::new(),
 		}
 	}
+	/// Create new rule for `syscall` that gives triggers ptrace.
+	pub fn trace(syscall: Syscall, message: u32) -> Rule {
+		Rule {
+			action: Action::Trace(message),
+			syscall_nr: syscall_to_num(syscall),
+			comparators: Vec::new(),
+		}
+	}
 
 	/// Adds comparison. Multiple comparisons will be
 	/// ANDed together.
@@ -356,8 +364,6 @@ fn it_works() {
 #[test]
 fn macro_works() {
 	  fn test() -> Result<(),Box<Error>> {
-        use std::io::Write;
-
         // first check that we can write 0 bytes before using seccomp
         // to restrict ourselves.
 		    let ret = unsafe { libc::write(1,std::ptr::null(),0) };
