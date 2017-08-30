@@ -194,8 +194,6 @@ pub struct Rule {
 
 #[derive(Debug,Clone,Copy)]
 pub enum Syscall {
-    Setuid,
-    Getuid,
     Writev,
     Pwritev,
     Exit,
@@ -209,31 +207,72 @@ pub enum Syscall {
     Link,
     Unlink,
     Execve,
+    Chdir,
+    Time,
+    Mknod,
+    Chmod,
+    Lchown,
+    Break,
+    Oldstat,
+    Lseek,
+    Getpid,
+    Mount,
+    Umount,
+    Setuid,
+    Getuid,
+    Stime,
+    Ptrace,
+    Alarm,
+    Oldfstat,
+    Pause,
+    Utime,
+    Stty,
+    Gtty,
 }
 
-fn str_sysnum(x: &str) -> usize {
-    unsafe {
-        seccomp_syscall_resolve_name(std::ffi::CString::new(x).unwrap().as_ptr()) as usize
+fn syscall_name(s: Syscall) -> &'static str {
+    match s {
+        Syscall::Write => "write",
+        Syscall::Writev => "writev",
+        Syscall::Pwritev => "pwritev",
+        Syscall::Read => "read",
+        Syscall::Exit => "exit",
+        Syscall::Fork => "fork",
+        Syscall::Open => "open",
+        Syscall::Close => "close",
+        Syscall::Waitpid => "waitpid",
+        Syscall::Creat => "creat",
+        Syscall::Link => "link",
+        Syscall::Unlink => "unlink",
+        Syscall::Execve => "execve",
+        Syscall::Chdir => "chdir",
+        Syscall::Time => "time",
+        Syscall::Mknod => "mknod",
+        Syscall::Chmod => "chmod",
+        Syscall::Lchown => "lchown",
+        Syscall::Break => "break",
+        Syscall::Oldstat => "oldstat",
+        Syscall::Lseek => "lseek",
+        Syscall::Getpid => "getpid",
+        Syscall::Mount => "mount",
+        Syscall::Umount => "umount",
+        Syscall::Setuid => "setuid",
+        Syscall::Getuid => "getuid",
+        Syscall::Stime => "stime",
+        Syscall::Ptrace => "ptrace",
+        Syscall::Alarm => "alarm",
+        Syscall::Oldfstat => "oldfstat",
+        Syscall::Pause => "pause",
+        Syscall::Utime => "utime",
+        Syscall::Stty => "stty",
+        Syscall::Gtty => "gtty",
     }
 }
 
 fn syscall_to_num(s: Syscall) -> usize {
-    match s {
-        Syscall::Setuid => str_sysnum("setuid"),
-        Syscall::Getuid => str_sysnum("getuid"),
-        Syscall::Write => str_sysnum("write"),
-        Syscall::Writev => str_sysnum("writev"),
-        Syscall::Pwritev => str_sysnum("pwritev"),
-        Syscall::Read => str_sysnum("read"),
-        Syscall::Exit => str_sysnum("exit"),
-        Syscall::Fork => str_sysnum("fork"),
-        Syscall::Open => str_sysnum("open"),
-        Syscall::Close => str_sysnum("close"),
-        Syscall::Waitpid => str_sysnum("waitpid"),
-        Syscall::Creat => str_sysnum("creat"),
-        Syscall::Link => str_sysnum("link"),
-        Syscall::Unlink => str_sysnum("unlink"),
-        Syscall::Execve => str_sysnum("execve"),
+    unsafe {
+        seccomp_syscall_resolve_name(std::ffi::CString::new(syscall_name(s))
+                                     .unwrap().as_ptr()) as usize
     }
 }
 
