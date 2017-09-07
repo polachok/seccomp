@@ -38,6 +38,13 @@ use std::convert::Into;
 use seccomp_sys::scmp_compare::*;
 
 pub type Cmp = scmp_arg_cmp;
+#[derive(Debug,Copy,Clone,Eq,PartialEq)]
+pub struct Arch(u32);
+
+pub const ARCH_NATIVE: Arch = Arch(scmp_arch::SCMP_ARCH_NATIVE as u32);
+pub const ARCH_X86: Arch = Arch(scmp_arch::SCMP_ARCH_X86 as u32);
+pub const ARCH_X86_64: Arch = Arch(scmp_arch::SCMP_ARCH_X86_64 as u32);
+pub const ARCH_X32: Arch = Arch(scmp_arch::SCMP_ARCH_X32 as u32);
 
 /// Comparison operators
 #[derive(Debug,Clone,Copy)]
@@ -200,8 +207,10 @@ pub enum Syscall {
     open,
     close,
     stat,
+    stat64,
     fstat,
     lstat,
+    lstat64,
     poll,
     lseek,
     mmap,
@@ -534,8 +543,10 @@ fn syscall_name(s: Syscall) -> &'static str {
         Syscall::open => "open",
         Syscall::close => "close",
         Syscall::stat => "stat",
+        Syscall::stat64 => "stat64",
         Syscall::fstat => "fstat",
         Syscall::lstat => "lstat",
+        Syscall::lstat64 => "lstat64",
         Syscall::poll => "poll",
         Syscall::lseek => "lseek",
         Syscall::mmap => "mmap",
@@ -957,6 +968,16 @@ impl Context {
 			Ok(())
 		}
 	}
+
+  /// Adds an arch to the rule.
+  pub fn add_arch(&mut self, arch: Arch) -> Result<(),SeccompError> {
+      let res = unsafe { seccomp_arch_add(self.int, arch.0) };
+      if res != 0 {
+	      Err(SeccompError::new(format!("failed to add arch {:?}", arch)))
+      } else {
+          Ok(())
+      }
+  }
 
 	/// Loads the filter into the kernel. Rules will be applied when this function returns.
 	pub fn load(&self) -> Result<(),SeccompError> {
