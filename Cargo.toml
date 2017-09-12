@@ -11,4 +11,4 @@ readme = "README.md"
 [dependencies]
 libc = "0.2"
 # seccomp-sys = "0.1.1"
-seccomp = { git = 'https://github.com/droundy/seccomp-sys' }
+seccomp-sys = { git = 'https://github.com/droundy/seccomp-sys' }
