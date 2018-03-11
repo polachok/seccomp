@@ -5,10 +5,10 @@
 //! Example usage:
 //!
 //! ```rust,no_run
-//!extern crate seccomp;
+//!extern crate seccomp_droundy;
 //!extern crate libc;
 //!
-//!use seccomp::*;
+//!use seccomp_droundy::*;
 //!
 //!fn main() {
 //!		let mut ctx = Context::default(Action::Allow).unwrap();
@@ -28,14 +28,14 @@
 //!
 
 
-extern crate seccomp_sys;
+extern crate seccomp_droundy_sys;
 extern crate libc;
 
-use seccomp_sys::*;
+use seccomp_droundy_sys::*;
 use std::error::Error;
 use std::fmt;
 use std::convert::Into;
-use seccomp_sys::scmp_compare::*;
+use seccomp_droundy_sys::scmp_compare::*;
 
 pub type Cmp = scmp_arg_cmp;
 #[derive(Debug,Copy,Clone,Eq,PartialEq)]
@@ -113,8 +113,9 @@ impl Into<libc::uint32_t> for Action {
 ///
 /// ```
 /// #[macro_use]
-/// extern crate seccomp;
-/// use seccomp::*;
+/// extern crate seccomp_droundy;
+/// use seccomp_droundy::*;
+/// use seccomp_droundy as seccomp;
 /// fn main() {
 ///	  let mut ctx = seccomp::Context::default(Action::Allow).unwrap();
 ///	  let rule = seccomp::Rule::new(105, scmp_cmp!( Arg(0) == 1000 ),

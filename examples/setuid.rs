@@ -1,7 +1,7 @@
-extern crate seccomp;
+extern crate seccomp_droundy;
 extern crate libc;
 
-use seccomp::*;
+use seccomp_droundy::*;
 
 fn main() {
         let mut ctx = Context::default(Action::Allow).unwrap();
