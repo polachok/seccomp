@@ -88,8 +88,8 @@ pub enum Action {
     Trace(u32),
 }
 
-impl Into<libc::uint32_t> for Action {
-    fn into(self) -> libc::uint32_t {
+impl Into<u32> for Action {
+    fn into(self) -> u32 {
         match self {
             Action::Allow => SCMP_ACT_ALLOW,
             Action::Kill => SCMP_ACT_KILL,
