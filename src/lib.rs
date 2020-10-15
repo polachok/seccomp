@@ -11,18 +11,18 @@
 //!use seccomp::*;
 //!
 //!fn main() {
-//!		let mut ctx = Context::default(Action::Allow).unwrap();
-//!		let rule = Rule::new(105 /* setuid on x86_64 */,
-//!			Compare::arg(0)
-//! 			    .with(1000)
-//! 				.using(Op::Eq)
-//! 				.build().unwrap(),
-//!			Action::Errno(libc::EPERM) /* return EPERM */
-//!		);
-//!		ctx.add_rule(rule).unwrap();
-//!		ctx.load().unwrap();
-//!		let ret = unsafe { libc::setuid(1000) };
-//!		println!("ret = {}, uid = {}", ret, unsafe { libc::getuid() });
+//!     let mut ctx = Context::default(Action::Allow).unwrap();
+//!     let rule = Rule::new(105 /* setuid on x86_64 */,
+//!         Compare::arg(0)
+//!                 .with(1000)
+//!                 .using(Op::Eq)
+//!                 .build().unwrap(),
+//!         Action::Errno(libc::EPERM) /* return EPERM */
+//!     );
+//!     ctx.add_rule(rule).unwrap();
+//!     ctx.load().unwrap();
+//!     let ret = unsafe { libc::setuid(1000) };
+//!     println!("ret = {}, uid = {}", ret, unsafe { libc::getuid() });
 //!}
 //!# pook perd
 //!
@@ -165,8 +165,8 @@ impl Rule {
     /// Create new rule for `syscall_nr` using comparison `cmp`.
     pub fn new(syscall_nr: usize, cmp: Cmp, action: Action) -> Rule {
         Rule {
-            action: action,
-            syscall_nr: syscall_nr,
+            action,
+            syscall_nr,
             comparators: vec![cmp],
         }
     }
@@ -191,7 +191,7 @@ impl SeccompError {
 }
 
 impl fmt::Display for SeccompError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "SeccompError: {}", self.msg)
     }
 }
@@ -255,14 +255,14 @@ impl Drop for Context {
 
 #[test]
 fn it_works() {
-    fn test() -> Result<(), Box<Error>> {
-        let mut ctx = try!(Context::default(Action::Allow));
-        try!(ctx.add_rule(Rule::new(
+    fn test() -> Result<(), Box<dyn Error>> {
+        let mut ctx = Context::default(Action::Allow)?;
+        ctx.add_rule(Rule::new(
             105,
             Compare::arg(0).using(Op::Eq).with(1000).build().unwrap(),
-            Action::Errno(libc::EPERM)
-        )));
-        try!(ctx.load());
+            Action::Errno(libc::EPERM),
+        ))?;
+        ctx.load()?;
         let ret = unsafe { libc::setuid(1000) };
         println!("ret = {}, uid = {}", ret, unsafe { libc::getuid() });
         Ok(())
