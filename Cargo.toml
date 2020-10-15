@@ -1,6 +1,6 @@
 [package]
 name = "seccomp"
-version = "0.1.0"
+version = "0.1.2"
 authors = ["Alexander Polakov <apolyakov@beget.ru>"]
 license = "LGPL-2.1"
 keywords = ["linux", "seccomp"]
