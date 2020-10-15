@@ -77,8 +77,10 @@ impl Into<scmp_compare> for Op {
 pub enum Action {
 	/// Allow the syscall to be executed
 	Allow,
-	/// Kill the process
+	/// Kill the offending thread
 	Kill,
+	/// Kill the whole offending process
+	KillProcess,
 	/// Throw a SIGSYS signal
 	Trap,
 	/// Return the specified error code
@@ -92,6 +94,7 @@ impl Into<libc::uint32_t> for Action {
 		match self {
 			Action::Allow => SCMP_ACT_ALLOW,
 			Action::Kill => SCMP_ACT_KILL,
+			Action::KillProcess => SCMP_ACT_KILL_PROCESS,
 			Action::Trap => SCMP_ACT_TRAP,
 			Action::Errno(x) => SCMP_ACT_ERRNO(x as u32),
 			Action::Trace(x) => SCMP_ACT_TRACE(x),
