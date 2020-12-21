@@ -163,11 +163,14 @@ pub struct Rule {
 
 impl Rule {
     /// Create new rule for `syscall_nr` using comparison `cmp`.
-    pub fn new(syscall_nr: usize, cmp: Cmp, action: Action) -> Rule {
+    pub fn new(syscall_nr: usize, cmp: Option<Cmp>, action: Action) -> Rule {
         Rule {
             action,
             syscall_nr,
-            comparators: vec![cmp],
+            comparators: match cmp {
+                Some(cmp) => vec![cmp],
+                None => vec![]
+            },
         }
     }
 
