@@ -248,6 +248,16 @@ impl Context {
             Ok(())
         }
     }
+
+    /// Exports the filter as a eBPF program to the given file.
+    pub fn export(&self, fd: i32) -> Result<(), SeccompError> {
+        let res = unsafe { seccomp_export_bpf(self.int, fd) };
+        if res != 0 {
+            Err(SeccompError::new("failed to export seccomp program"))
+        } else {
+            Ok(())
+        }
+    }
 }
 
 impl Drop for Context {
